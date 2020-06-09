@@ -1,0 +1,123 @@
+---
+title: "FINAL STOCK"
+author: "Yutian Yang"
+date: "6/7/2020"
+output: html_document
+---
+
+```{r}
+library(httr)
+library(tidyverse)
+library(jsonlite)
+library(scales)
+```
+
+
+```{r}
+r <- GET("https://api.covid19api.com/summary")
+
+
+json <- content(r, as = "text")
+country <- fromJSON(json)
+
+input_country = "Algeria"
+country$Countries$Slug[which(country$Countries$Country == input_country)]
+```
+```{r}
+country
+```
+
+```{r}
+#functions:
+# 1. look up country summary https://api.covid19api.com/summary
+# 2. use api-country to get all avaliable country for selection https://api.covid19api.com/countries 
+
+# 2.5 look up country in or not in time frame https://api.covid19api.com/dayone/country/south-africa/status/confirmed https://api.covid19api.com/total/country/south-africa/status/confirmed?from=2020-03-01T00:00:00Z&to=2020-04-01T00:00:00Z
+# 3. check confirmed, recover, death cases in plot and table
+```
+
+```{r}
+r <- GET("https://api.covid19api.com/countries")
+
+
+json <- content(r, as = "text")
+fromJSON(json)
+```
+```{r}
+r <- GET(str_glue("https://api.covid19api.com/dayone/country/{input_country}/status/{input_status}",
+                  input_country = "south-africa",
+                  input_status = "confirmed"
+                  ))
+json <- content(r, as = "text")
+covid <- fromJSON(json)
+covid <- covid %>% mutate(Month_Date = substr(Date,6,10))
+case = covid$Cases
+
+ggplot(data = covid, aes(x = as.factor(Month_Date), y = Cases)) + geom_point()  +  theme(axis.text.x=element_text(angle=50, size=6, vjust=0.5))
+ggsave("Confirmed.png", width = 16, height = 5, dpi = 180)
+```
+```{r}
+
+r <- GET("https://api.covid19api.com/summary") #NewConfirmed TotalConfirmed NewDeaths TotalDeaths NewRecovered TotalRecovered
+
+
+json <- content(r, as = "text")
+summary <- fromJSON(json)
+summary$Countries %>% select(Country, NewConfirmed ,TotalConfirmed, NewDeaths, TotalDeaths, NewRecovered, TotalRecovered)
+```
+```{r}
+
+global <- data_frame(New_confirmed = summary$Global$NewConfirmed, Total_confirmed = summary$Global$TotalConfirmed, New_death = summary$Global$NewDeaths, Total_deaths = summary$Global$TotalDeaths, New_recovered = summary$Global$NewRecovered, Total_recovered = summary$Global$TotalRecovered) %>% mutate(Death_rate = percent(Total_deaths/Total_confirmed))
+global
+```
+```{r}
+
+r <- GET("https://api.covid19api.com/total/country/south-africa/status/confirmed?from=2020-03-01T00:00:00Z&to=2020-04-08T00:00:00Z")
+
+json <- content(r, as = "text")
+covid_time <- fromJSON(json) %>% mutate(Month_Date = substr(Date,6,10))
+ggplot(data = covid_time, aes(x = as.factor(Month_Date), y = Cases)) + geom_point()  +  theme(axis.text.x=element_text(angle=50, size=4, vjust=0.5))
+ggsave("Confirmed_time.png", width = 16, height = 5, dpi = 180)
+```
+```{r}
+GET(str_glue("https://api.covid19api.com/dayone/country/{input_country}/status/{input_status}",
+                      input_country = "south-africa",
+                      input_status = "confirmed")) %>% 
+            content(., as = "text") %>%
+            fromJSON() %>% 
+            mutate(Month_Date = substr(Date,6,10))
+```
+```{r}
+covid_time$Cases[nrow(covid_time)]
+
+covid_time
+
+
+(covid_time$Cases[nrow(covid_time)] - covid_time$Cases[nrow(covid_time)-1]) / covid_time$Cases[nrow(covid_time)-1]
+```
+
+
+```{r}
+# what to put in summary stats table
+#1. total confirmed, deaths, recovered during the time period
+#2. average growth rate during the period (new_status/(total_status - new_status))
+#3. death rate during the time period
+#4. average status during the time period
+
+
+average_status <- covid_time$Cases[nrow(covid_time)]/nrow(covid_time)
+total_status <- covid_time$Cases[nrow(covid_time)]
+status_growth <- covid_time$Cases[nrow(covid_time)] - covid_time$Cases[1]
+growth_rate <- (covid_time$Cases[nrow(covid_time)] - covid_time$Cases[nrow(covid_time)-1]) / covid_time$Cases[nrow(covid_time)-1]
+
+
+sum_status_2 <- tibble(Total_status = covid_time$Cases[nrow(covid_time)],
+       Average_status = covid_time$Cases[nrow(covid_time)]/nrow(covid_time),
+       status_growth = covid_time$Cases[nrow(covid_time)] - covid_time$Cases[1],
+       status_Growth_Rate = status_growth/Total_status)
+
+
+names(sum_status_2) = c(paste("Total","input$status"),paste("Average","input$status"),paste("input$status", "Population Growth"),paste("input$status","Growth Rate"))
+sum_status_2
+```
+
