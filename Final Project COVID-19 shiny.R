@@ -33,7 +33,7 @@ ui <- fluidPage(
                         selectInput("status","Status",choices = c("confirmed","deaths","recovered"))
                     ),
                     mainPanel(h4("Status vs. Date"),  plotOutput("scatter"),
-                              h4("Status Summary"),tableOutput("sum_stats"),
+                              h4("Status Summary During the Time Period"),tableOutput("sum_stats"),
                               h4("Global/Country Summary"),tableOutput("country_sum")
                         
                     )
