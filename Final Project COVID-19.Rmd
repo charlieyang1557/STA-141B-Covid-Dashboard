@@ -41,8 +41,14 @@ r <- GET("https://api.covid19api.com/countries")
 
 
 json <- content(r, as = "text")
-fromJSON(json)
+fromJSON(json) %>% arrange(Country)
 ```
+
+```{r}
+summary$Countries$Country
+```
+
+
 ```{r}
 r <- GET(str_glue("https://api.covid19api.com/dayone/country/{input_country}/status/{input_status}",
                   input_country = "south-africa",
@@ -90,10 +96,7 @@ GET(str_glue("https://api.covid19api.com/dayone/country/{input_country}/status/{
 ```{r}
 covid_time$Cases[nrow(covid_time)]
 
-covid_time
-
-
-(covid_time$Cases[nrow(covid_time)] - covid_time$Cases[nrow(covid_time)-1]) / covid_time$Cases[nrow(covid_time)-1]
+covid_time[nrow(covid_time),]
 ```
 
 
@@ -111,13 +114,24 @@ status_growth <- covid_time$Cases[nrow(covid_time)] - covid_time$Cases[1]
 growth_rate <- (covid_time$Cases[nrow(covid_time)] - covid_time$Cases[nrow(covid_time)-1]) / covid_time$Cases[nrow(covid_time)-1]
 
 
-sum_status_2 <- tibble(Total_status = covid_time$Cases[nrow(covid_time)],
+sum_status_2 <- tibble(Country = covid_time$Country[1],
+  Total_status = covid_time$Cases[nrow(covid_time)],
        Average_status = covid_time$Cases[nrow(covid_time)]/nrow(covid_time),
        status_growth = covid_time$Cases[nrow(covid_time)] - covid_time$Cases[1],
        status_Growth_Rate = status_growth/Total_status)
 
 
-names(sum_status_2) = c(paste("Total","input$status"),paste("Average","input$status"),paste("input$status", "Population Growth"),paste("input$status","Growth Rate"))
+names(sum_status_2) = c(paste("Country Name") ,paste("Total","input$status"),paste("Average","input$status"),paste("input$status", "Population Growth"),paste("input$status","Growth Rate"))
 sum_status_2
+```
+
+```{r}
+#geom_line geom_path ///////
+#x-axis  # show every 5 days
+#plot title/ empty plot for "-" in country # require countrycode to be req() //////
+#note for country has no     #data req() line > 0 ////
+#seperate dataframe into two line #add another table below /////
+
+#other function advice? #show trend for multiple country # show more information in the graph 
 ```
 
